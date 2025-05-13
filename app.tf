@@ -53,6 +53,18 @@ resource "aws_security_group" "app" {
 }
 
 # see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule
+resource "aws_vpc_security_group_ingress_rule" "app_winrm" {
+  security_group_id = aws_security_group.app.id
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 5985
+  to_port           = 5985
+  tags = {
+    Name = "${var.name_prefix}-app-winrm"
+  }
+}
+
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule
 resource "aws_vpc_security_group_ingress_rule" "app_rdp" {
   security_group_id = aws_security_group.app.id
   ip_protocol       = "tcp"
@@ -105,12 +117,44 @@ resource "aws_iam_role_policy_attachment" "app_ssm_agent" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+locals {
+  # NB the logs are stored at C:\ProgramData\Amazon\EC2Launch\log\agent.log, which contains the path for this script output, e.g.:
+  #      2025-05-13 07:34:41 Info: Script file is created at: C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch1320634735\UserScript.ps1
+  #      2025-05-13 07:34:41 Info: Error file is created at: C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch1320634735\err.tmp
+  #      2025-05-13 07:34:41 Info: Output file is created at: C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch1320634735\output.tmp
+  # see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#ec2-windows-user-data
+  # see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-settings.html#ec2launch-v2-task-configuration
+  app_user_data = yamlencode({
+    version = "1.1"
+    # NB even thou this is an array, EC2Launch only executes the first task of
+    #    the same type. e.g.: if you have two executeScript tasks, only the
+    #    first is executed.
+    # NB the executeScript task supports the execution of multiple scripts by
+    #    including them on its inputs array.
+    tasks = [
+      # see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-task-definitions.html#ec2launch-v2-executescript
+      {
+        task = "executeScript"
+        inputs = [
+          {
+            frequency = "once"
+            type      = "powershell"
+            runAs     = "localSystem"
+            content   = file("provision-winrm.ps1")
+          },
+        ]
+      },
+    ]
+  })
+}
+
 # see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 resource "aws_instance" "app" {
   ami                  = data.aws_ami.windows.id
   instance_type        = "t3.medium" # 2 cpu. 4 GiB RAM. Nitro System. see https://aws.amazon.com/ec2/instance-types/t3/
   iam_instance_profile = aws_iam_instance_profile.app.name
   key_name             = aws_key_pair.admin.key_name
+  user_data_base64     = base64encode(local.app_user_data)
   metadata_options {
     http_endpoint = "enabled"
     http_tokens   = "required"

@@ -12,6 +12,8 @@ This will:
   * Assign a Public IP address.
   * Assign a IAM Role.
     * Include the [AmazonSSMManagedInstanceCore Policy](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AmazonSSMManagedInstanceCore.html).
+  * Initialize.
+    * Configure WinRM.
 
 # Usage (on a Ubuntu Desktop)
 
@@ -143,10 +145,38 @@ aws ec2 get-password-data \
   | jq -r .PasswordData
 ```
 
-Connect to the instance RDP server:
+Connect to the instance RDP server as the `Administrator` user:
 
 ```bash
 remmina "rdp://Administrator@$(terraform output --raw app_ip_address)"
+```
+
+Do a connectivity check for the WinRM server endpoint, which should return a
+`405 Method Not Allowed` status code when the server is ready and you can
+connect to it:
+
+```bash
+curl --verbose "http://$(terraform output --raw app_ip_address):5985/wsman"
+```
+
+Test the WinRM connection, which should not return any error:
+
+**NB** You must first install the [`winps` container image](https://github.com/rgl/winps).
+
+```bash
+administrator_password="$(aws ec2 get-password-data \
+  --instance-id "$(terraform output --raw app_instance_id)" \
+  --priv-launch-key ~/.ssh/id_rsa \
+  | jq -r .PasswordData)"
+docker run --rm \
+  "--add-host=winrm.test:$(terraform output --raw app_ip_address)" \
+  winps \
+  winps \
+  execute \
+  --host=winrm.test \
+  --encryption=auto \
+  --username=Administrator \
+  "--password=$administrator_password"
 ```
 
 Using [aws ssm session manager](https://docs.aws.amazon.com/cli/latest/reference/ssm/start-session.html), open a `powershell` shell inside the VM and execute some commands:
@@ -197,6 +227,8 @@ make terraform-destroy
 * [AWS General Reference](https://docs.aws.amazon.com/general/latest/gr/Welcome.html)
   * [Amazon Resource Names (ARNs)](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html)
 * [Connect to the internet using an internet gateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html#vpc-igw-internet-access)
+* [Configure your Amazon EC2 Windows instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-windows-instances.html)
+* [How Amazon EC2 handles user data for Windows instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#ec2-windows-user-data)
 * [AWS Systems Manager (aka Amazon EC2 Simple Systems Manager (SSM))](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html)
   * [Amazon SSM Agent Source Code Repository](https://github.com/aws/amazon-ssm-agent)
   * [Amazon SSM Session Manager Plugin Source Code Repository](https://github.com/aws/session-manager-plugin)
