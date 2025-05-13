@@ -14,6 +14,7 @@ This will:
     * Include the [AmazonSSMManagedInstanceCore Policy](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AmazonSSMManagedInstanceCore.html).
   * Initialize.
     * Configure WinRM.
+    * Configure SSH.
 
 # Usage (on a Ubuntu Desktop)
 
@@ -177,6 +178,13 @@ docker run --rm \
   --encryption=auto \
   --username=Administrator \
   "--password=$administrator_password"
+```
+
+Test the SSH connection, which should use your `~/.ssh/id_rsa` key file to
+automatically login as the `Administrator` user, and execute a command:
+
+```bash
+ssh "Administrator@$(terraform output --raw app_ip_address)" whoami /all
 ```
 
 Using [aws ssm session manager](https://docs.aws.amazon.com/cli/latest/reference/ssm/start-session.html), open a `powershell` shell inside the VM and execute some commands:

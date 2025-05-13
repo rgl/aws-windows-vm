@@ -53,6 +53,18 @@ resource "aws_security_group" "app" {
 }
 
 # see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule
+resource "aws_vpc_security_group_ingress_rule" "app_ssh" {
+  security_group_id = aws_security_group.app.id
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 22
+  to_port           = 22
+  tags = {
+    Name = "${var.name_prefix}-app-ssh"
+  }
+}
+
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule
 resource "aws_vpc_security_group_ingress_rule" "app_winrm" {
   security_group_id = aws_security_group.app.id
   ip_protocol       = "tcp"
@@ -132,6 +144,10 @@ locals {
     # NB the executeScript task supports the execution of multiple scripts by
     #    including them on its inputs array.
     tasks = [
+      # see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-task-definitions.html#ec2launch-v2-enableopenssh
+      {
+        task = "enableOpenSsh"
+      },
       # see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-task-definitions.html#ec2launch-v2-executescript
       {
         task = "executeScript"
