@@ -140,10 +140,17 @@ make terraform-show
 Show the `Administrator` user password:
 
 ```bash
-aws ec2 get-password-data \
-  --instance-id "$(terraform output --raw app_instance_id)" \
-  --priv-launch-key ~/.ssh/id_rsa \
-  | jq -r .PasswordData
+while true; do
+  administrator_password="$(aws ec2 get-password-data \
+    --instance-id "$(terraform output --raw app_instance_id)" \
+    --priv-launch-key ~/.ssh/id_rsa \
+    | jq -r .PasswordData)"
+  if [ -n "$administrator_password" ]; then
+    echo "Administrator password: $administrator_password"
+    break
+  fi
+  sleep 5
+done
 ```
 
 Connect to the instance RDP server as the `Administrator` user:
@@ -180,11 +187,31 @@ docker run --rm \
   "--password=$administrator_password"
 ```
 
-Test the SSH connection, which should use your `~/.ssh/id_rsa` key file to
-automatically login as the `Administrator` user, and execute a command:
+Get the instance ssh host public keys, convert them to the knowns hosts format,
+and show their fingerprints:
 
 ```bash
-ssh "Administrator@$(terraform output --raw app_ip_address)" whoami /all
+./aws-ssm-get-sshd-public-keys.sh \
+  "$(terraform output --raw app_instance_id)" \
+  | tail -2 \
+  | jq -r .sshd_public_keys \
+  | sed "s/^/$(terraform output --raw app_instance_id),$(terraform output --raw app_ip_address) /" \
+  > app-ssh-known-hosts.txt
+ssh-keygen -l -f app-ssh-known-hosts.txt
+```
+
+Using your ssh client, open a shell inside the VM and execute some commands:
+
+```bash
+ssh \
+  -o UserKnownHostsFile=app-ssh-known-hosts.txt \
+  "Administrator@$(terraform output --raw app_ip_address)"
+powershell
+$PSVersionTable
+whoami /all
+exit # exit the powershell.exe shell.
+exit # exit the cmd.exe shell.
+```
 ```
 
 Using [aws ssm session manager](https://docs.aws.amazon.com/cli/latest/reference/ssm/start-session.html), open a `powershell` shell inside the VM and execute some commands:
@@ -200,7 +227,7 @@ Using [aws ssm session manager](https://docs.aws.amazon.com/cli/latest/reference
 aws ssm start-session --target "$(terraform output --raw app_instance_id)"
 $PSVersionTable
 whoami /all
-exit
+exit # exit the powershell.exe shell.
 ```
 
 Using [aws ssm session manager](https://docs.aws.amazon.com/cli/latest/reference/ssm/start-session.html), open a `cmd` shell inside the VM and execute some commands:
