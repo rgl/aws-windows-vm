@@ -20,6 +20,32 @@ resource "aws_key_pair" "admin" {
   public_key = var.admin_ssh_key_data
 }
 
+# see https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-schemas-features.html
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_document
+resource "aws_ssm_document" "get_windows_ssh_host_public_keys" {
+  name            = "${var.name_prefix}-get-windows-ssh-host-public-keys"
+  document_type   = "Command"
+  document_format = "YAML"
+  content = yamlencode({
+    schemaVersion = "2.2"
+    description   = "Get the Windows OpenSSH server host public keys"
+    parameters    = {}
+    mainSteps = [
+      {
+        name   = "GetWindowsSshHostPublicKeys"
+        action = "aws:runPowerShellScript"
+        precondition = {
+          StringEquals = ["platformType", "Windows"]
+        }
+        inputs = {
+          timeoutSeconds = 60
+          runCommand     = [file("get-windows-ssh-host-public-keys.ps1")]
+        }
+      }
+    ]
+  })
+}
+
 # see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_interface
 resource "aws_network_interface" "app" {
   subnet_id       = aws_subnet.public_az_a.id

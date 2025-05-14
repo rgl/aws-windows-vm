@@ -212,6 +212,19 @@ whoami /all
 exit # exit the powershell.exe shell.
 exit # exit the cmd.exe shell.
 ```
+
+Using your ssh client, and [aws ssm session manager to proxy the ssh connection](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html), open a shell inside the VM and execute some commands:
+
+```bash
+ssh \
+  -o UserKnownHostsFile=app-ssh-known-hosts.txt \
+  -o ProxyCommand='aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p' \
+  "Administrator@$(terraform output --raw app_instance_id)"
+powershell
+$PSVersionTable
+whoami /all
+exit # exit the powershell.exe shell.
+exit # exit the cmd.exe shell.
 ```
 
 Using [aws ssm session manager](https://docs.aws.amazon.com/cli/latest/reference/ssm/start-session.html), open a `powershell` shell inside the VM and execute some commands:
@@ -270,6 +283,9 @@ make terraform-destroy
   * [AWS Systems Manager Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html)
     * [Start a session](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html)
       * [Starting a session (AWS CLI)](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html#sessions-start-cli)
+      * [Starting a session (SSH)](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html#sessions-start-ssh)
+        * [Allow and control permissions for SSH connections through Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html)
+      * [Starting a session (port forwarding)](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html#sessions-start-port-forwarding)
 
 # Alternatives
 
