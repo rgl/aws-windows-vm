@@ -1,3 +1,6 @@
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity
+data "aws_caller_identity" "current" {}
+
 # see aws ec2 describe-images --output text --owners amazon --filters "Name=name,Values=Windows_Server-2025-English-*" --query 'reverse(sort_by(Images, &CreationDate))[].[Name,CreationDate,ImageId]'
 # see https://docs.aws.amazon.com/ec2/latest/windows-ami-reference/ec2-windows-ami-version-history.html
 # see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami
@@ -114,6 +117,18 @@ resource "aws_vpc_security_group_ingress_rule" "app_rdp" {
   }
 }
 
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule
+resource "aws_vpc_security_group_ingress_rule" "app_http" {
+  security_group_id = aws_security_group.app.id
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 80
+  to_port           = 80
+  tags = {
+    Name = "${var.name_prefix}-app-http"
+  }
+}
+
 # see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_egress_rule
 resource "aws_vpc_security_group_egress_rule" "app_all" {
   security_group_id = aws_security_group.app.id
@@ -141,6 +156,35 @@ resource "aws_iam_role" "app" {
   })
 }
 
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment
+resource "aws_iam_role_policy_attachment" "app" {
+  role       = aws_iam_role.app.name
+  policy_arn = aws_iam_policy.app.arn
+}
+
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy
+resource "aws_iam_policy" "app" {
+  name = "${var.name_prefix}-app"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameters",
+          "ssm:GetParameter",
+        ]
+        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${aws_iam_instance_profile.app.role}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:DescribeParameters"]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile
 resource "aws_iam_instance_profile" "app" {
   name = "${var.name_prefix}-app"
@@ -153,6 +197,13 @@ resource "aws_iam_instance_profile" "app" {
 resource "aws_iam_role_policy_attachment" "app_ssm_agent" {
   role       = aws_iam_role.app.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# see https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter
+resource "aws_ssm_parameter" "app_message" {
+  name  = "/${aws_iam_instance_profile.app.role}/message"
+  type  = "String"
+  value = "Hello, World!"
 }
 
 locals {
@@ -183,6 +234,12 @@ locals {
             type      = "powershell"
             runAs     = "localSystem"
             content   = file("provision-winrm.ps1")
+          },
+          {
+            frequency = "once"
+            type      = "powershell"
+            runAs     = "localSystem"
+            content   = file("provision-app.ps1")
           },
         ]
       },

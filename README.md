@@ -8,6 +8,7 @@ This will:
 
 * Create a VPC.
   * Configure a Internet Gateway.
+* Create a Systems Manager ([aka SSM](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html#service-naming-history)) Parameter.
 * Create a EC2 Instance.
   * Assign a Public IP address.
   * Assign a IAM Role.
@@ -15,6 +16,10 @@ This will:
   * Initialize.
     * Configure WinRM.
     * Configure SSH.
+    * Install a example application.
+      * Get the [Instance Identity Document](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-identity-documents.html) from the [EC2 Instance Metadata Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).
+      * Get a Parameter from the [Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html).
+      * Get the [Instance (IAM) Role Credentials](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html#instance-metadata-security-credentials).
 
 # Usage (on a Ubuntu Desktop)
 
@@ -209,6 +214,9 @@ ssh \
 powershell
 $PSVersionTable
 whoami /all
+&"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
+&"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
+curl.exe --verbose http://localhost/try
 exit # exit the powershell.exe shell.
 exit # exit the cmd.exe shell.
 ```
@@ -223,6 +231,9 @@ ssh \
 powershell
 $PSVersionTable
 whoami /all
+&"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
+&"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
+curl.exe --verbose http://localhost/try
 exit # exit the powershell.exe shell.
 exit # exit the cmd.exe shell.
 ```
@@ -240,6 +251,9 @@ Using [aws ssm session manager](https://docs.aws.amazon.com/cli/latest/reference
 aws ssm start-session --target "$(terraform output --raw app_instance_id)"
 $PSVersionTable
 whoami /all
+&"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
+&"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
+curl.exe --verbose http://localhost/try
 exit # exit the powershell.exe shell.
 ```
 
@@ -258,6 +272,9 @@ aws ssm start-session \
   --target "$(terraform output --raw app_instance_id)"
 ver
 whoami /all
+"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
+"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
+curl --verbose http://localhost/try
 exit
 ```
 
@@ -275,6 +292,8 @@ make terraform-destroy
 * [AWS General Reference](https://docs.aws.amazon.com/general/latest/gr/Welcome.html)
   * [Amazon Resource Names (ARNs)](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html)
 * [Connect to the internet using an internet gateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html#vpc-igw-internet-access)
+* [Retrieve instance metadata](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
+* [How Instance Metadata Service Version 2 works](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-metadata-v2-how-it-works.html)
 * [Configure your Amazon EC2 Windows instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-windows-instances.html)
 * [How Amazon EC2 handles user data for Windows instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#ec2-windows-user-data)
 * [AWS Systems Manager (aka Amazon EC2 Simple Systems Manager (SSM))](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html)
