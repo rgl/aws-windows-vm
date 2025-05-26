@@ -23,11 +23,16 @@ This will:
 
 # Usage (on a Ubuntu Desktop)
 
-Install the tools:
+Install Visual Studio Code and the Dev Container plugin.
 
-```bash
-./provision-tools.sh
-```
+Install the dependencies:
+
+* [Visual Studio Code](https://code.visualstudio.com).
+* [Dev Container plugin](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+
+Open this directory with the Dev Container plugin.
+
+Open the Visual Studio Code Terminal.
 
 Set the AWS Account credentials using SSO, e.g.:
 
@@ -160,6 +165,9 @@ done
 
 Connect to the instance RDP server as the `Administrator` user:
 
+**NB** This does not run from the dev container, so you should echo it here,
+and then execute the resulting command on your host.
+
 ```bash
 remmina "rdp://Administrator@$(terraform output --raw app_ip_address)"
 ```
@@ -173,6 +181,9 @@ curl --verbose "http://$(terraform output --raw app_ip_address):5985/wsman"
 ```
 
 Test the WinRM connection, which should not return any error:
+
+**NB** This does not run from the dev container, so you should echo it here,
+and then execute the resulting command on your host.
 
 **NB** You must first install the [`winps` container image](https://github.com/rgl/winps).
 
