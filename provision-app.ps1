@@ -73,7 +73,7 @@ $nssmVersion = '2.24.101.20180116'
 # see https://community.chocolatey.org/packages/nodejs-lts
 # see https://nodejs.org/en/
 # renovate: datasource=nuget:chocolatey depName=nodejs-lts versioning=node
-$nodejsVersion = '22.15.0'
+$nodejsVersion = '22.15.1'
 choco install -y nssm "--version=$nssmVersion"
 choco install -y nodejs-lts "--version=$nodejsVersion"
 Update-SessionEnvironment
@@ -206,7 +206,7 @@ Set-Content -Encoding ascii -Path package.json -Value @'
 '@
 # see https://www.npmjs.com/package/@aws-sdk/client-ssm
 # renovate: datasource=npm depName=@aws-sdk/client-ssm
-$awsSdkClientSsmVersion = '3.806.0'
+$awsSdkClientSsmVersion = '3.817.0'
 exec {npm install --save "@aws-sdk/client-ssm@$awsSdkClientSsmVersion"}
 
 # create the windows service using a managed service account.
