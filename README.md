@@ -10,7 +10,8 @@ This will:
   * Configure a Internet Gateway.
 * Create a Systems Manager ([aka SSM](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html#service-naming-history)) Parameter.
 * Create a EC2 Instance.
-  * Assign a Public IP address.
+  * Assign a Public IP IPv4 address.
+  * Assign a Public IP IPv6 address.
   * Assign a IAM Role.
     * Include the [AmazonSSMManagedInstanceCore Policy](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AmazonSSMManagedInstanceCore.html).
   * Initialize.
@@ -171,6 +172,7 @@ and then execute the resulting command on your host.
 
 ```bash
 remmina "rdp://Administrator@$(terraform output --raw app_ip_address)"
+remmina "rdp://Administrator@$(terraform output --raw app_ipv6_address)"
 ```
 
 Do a connectivity check for the WinRM server endpoint, which should return a
@@ -179,6 +181,16 @@ connect to it:
 
 ```bash
 curl --verbose "http://$(terraform output --raw app_ip_address):5985/wsman"
+```
+
+Repeat, using IPv6, but you have to do it outside of the dev container, as it
+does not have IPv6 support:
+
+**NB** This does not run from the dev container, so you should echo it here,
+and then execute the resulting command on your host.
+
+```bash
+curl --verbose "http://[$(terraform output --raw app_ipv6_address)]:5985/wsman"
 ```
 
 Test the WinRM connection, which should not return any error:
@@ -212,7 +224,7 @@ and show their fingerprints:
   "$(terraform output --raw app_instance_id)" \
   | tail -2 \
   | jq -r .sshd_public_keys \
-  | sed "s/^/$(terraform output --raw app_instance_id),$(terraform output --raw app_ip_address) /" \
+  | sed "s/^/$(terraform output --raw app_instance_id),$(terraform output --raw app_ip_address),$(terraform output --raw app_ipv6_address) /" \
   > app-ssh-known-hosts.txt
 ssh-keygen -l -f app-ssh-known-hosts.txt
 ```
@@ -226,11 +238,45 @@ ssh \
 powershell
 $PSVersionTable
 whoami /all
+winrm id
+winrm enumerate winrm/config/listener
+winrm get winrm/config
 &"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
 &"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
+# List all the AWS endpoints that the SSM agent uses
+&"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics |
+  Select-String -Pattern '([a-z0-9.-]+\.amazonaws\.com)' -AllMatches |
+  ForEach-Object { $_.Matches.Groups[1].Value } |
+  Sort-Object -Unique |
+  ForEach-Object {
+    $endpoint = $_
+    (Resolve-DnsName -Name $endpoint -Type A -QuickTimeout).IPAddress |
+    Sort-Object |
+    ForEach-Object { "$endpoint`: $_" }
+    (Resolve-DnsName -Name $endpoint -Type AAAA -QuickTimeout).IPAddress |
+    Sort-Object |
+    ForEach-Object { "$endpoint`: $_" }
+  }
 curl.exe --verbose http://localhost/try
+curl.exe --verbose 'http://[::1]/try'
 exit # exit the powershell.exe shell.
 exit # exit the cmd.exe shell.
+```
+
+Using your ssh client, access using ipv6:
+
+**NB** This does not run from the dev container, so you should echo it here,
+and then execute the resulting command on your host.
+
+```bash
+ssh \
+  -6 \
+  -o UserKnownHostsFile=app-ssh-known-hosts.txt \
+  "Administrator@$(terraform output --raw app_ipv6_address)"
+echo %SSH_CLIENT%
+echo %SSH_CONNECTION%
+curl -6 https://ip6.me/api/
+exit
 ```
 
 Using your ssh client, and [aws ssm session manager to proxy the ssh connection](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html), open a shell inside the VM and execute some commands:
@@ -246,6 +292,7 @@ whoami /all
 &"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
 &"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
 curl.exe --verbose http://localhost/try
+curl.exe --verbose 'http://[::1]/try'
 exit # exit the powershell.exe shell.
 exit # exit the cmd.exe shell.
 ```
@@ -266,6 +313,7 @@ whoami /all
 &"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
 &"C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
 curl.exe --verbose http://localhost/try
+curl.exe --verbose 'http://[::1]/try'
 exit # exit the powershell.exe shell.
 ```
 
@@ -287,6 +335,7 @@ whoami /all
 "C:\Program Files\Amazon\SSM\ssm-cli.exe" get-instance-information
 "C:\Program Files\Amazon\SSM\ssm-cli.exe" get-diagnostics
 curl --verbose http://localhost/try
+curl --verbose http://[::1]/try
 exit
 ```
 
@@ -317,6 +366,11 @@ make terraform-destroy
       * [Starting a session (SSH)](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html#sessions-start-ssh)
         * [Allow and control permissions for SSH connections through Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html)
       * [Starting a session (port forwarding)](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html#sessions-start-port-forwarding)
+* IPv6
+  * [IPv6 on AWS](https://docs.aws.amazon.com/whitepapers/latest/ipv6-on-aws/IPv6-on-AWS.html)
+  * [IPv6 support for your VPC](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-migrate-ipv6.html)
+  * [AWS and IPv6](https://www.youtube.com/watch?v=bJK5R_dJCBY)
+  * [Architect and build IPv6 networks on AWS](https://www.youtube.com/watch?v=zRILaf5JeTM)
 
 # Alternatives
 
