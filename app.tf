@@ -270,3 +270,24 @@ resource "aws_instance" "app" {
     Name = "example-windows"
   }
 }
+
+# see https://developer.hashicorp.com/terraform/language/resources/terraform-data
+resource "terraform_data" "app_ready" {
+  provisioner "local-exec" {
+    interpreter = ["/usr/bin/env", "bash"]
+    command     = "./aws-ssm-remote-exec.sh"
+    environment = {
+      AWS_SSM_SSH_EXEC_EC2_INSTANCE_ID       = aws_instance.app.id
+      AWS_SSM_SSH_EXEC_EC2_INSTANCE_USERNAME = "Administrator"
+      AWS_SSM_SSH_EXEC_STDIN                 = <<-EOF
+        :: NB this is a batch script.
+        whoami /all
+        ipconfig /all
+      EOF
+    }
+  }
+  depends_on = [
+    aws_eip.app,
+    aws_instance.app,
+  ]
+}
