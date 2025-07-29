@@ -206,7 +206,7 @@ Set-Content -Encoding ascii -Path package.json -Value @'
 '@
 # see https://www.npmjs.com/package/@aws-sdk/client-ssm
 # renovate: datasource=npm depName=@aws-sdk/client-ssm
-$awsSdkClientSsmVersion = '3.840.0'
+$awsSdkClientSsmVersion = '3.849.0'
 exec {npm install --save "@aws-sdk/client-ssm@$awsSdkClientSsmVersion"}
 
 # create the windows service using a managed service account.

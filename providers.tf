@@ -12,7 +12,7 @@ terraform {
     # see https://github.com/hashicorp/terraform-provider-aws
     aws = {
       source  = "hashicorp/aws"
-      version = "6.2.0"
+      version = "6.5.0"
     }
   }
 }
