@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile:1.19
+# syntax=docker.io/docker/dockerfile:1.20
 
 # see https://docs.aws.amazon.com/cli/latest/userguide/getting-started-version.html
 # see https://github.com/aws/aws-cli/tags
@@ -15,10 +15,10 @@ ARG AWS_SESSION_MANAGER_PLUGIN_VERSION='1.2.707.0'
 # see https://www.terraform.io/downloads.html
 # see https://github.com/hashicorp/terraform/releases
 # renovate: datasource=github-releases depName=hashicorp/terraform
-ARG TERRAFORM_VERSION='1.13.4'
+ARG TERRAFORM_VERSION='1.14.3'
 
 # see https://github.com/devcontainers/images/tree/main/src/base-debian/history
-FROM mcr.microsoft.com/devcontainers/base:2.0.2-trixie
+FROM mcr.microsoft.com/devcontainers/base:2.1.3-trixie
 
 RUN <<'EOF'
 #!/usr/bin/bash

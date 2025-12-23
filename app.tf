@@ -9,7 +9,7 @@ data "aws_ami" "windows" {
   owners      = ["amazon"]
   filter {
     name   = "name"
-    values = ["Windows_Server-2025-English-Full-Base-*"] # e.g. Windows_Server-2025-English-Full-Base-2025.04.09
+    values = ["Windows_Server-2025-English-Full-Base-*"] # e.g. Windows_Server-2025-English-Full-Base-2025.12.10
   }
   filter {
     name   = "virtualization-type"
