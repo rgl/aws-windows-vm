@@ -165,6 +165,17 @@ while true; do
 done
 ```
 
+Get the instance RDP server certificate thumbprint:
+
+```bash
+./aws-ssm-get-rdp-certificate.sh \
+  "$(terraform output --raw app_instance_id)" \
+  > app-rdp-certificate.pem
+openssl x509 -in app-rdp-certificate.pem -noout -text
+openssl x509 -in app-rdp-certificate.pem -noout -fingerprint
+openssl x509 -in app-rdp-certificate.pem -noout -fingerprint -sha256
+```
+
 Connect to the instance RDP server as the `Administrator` user:
 
 **NB** This does not run from the dev container, so you should echo it here,
