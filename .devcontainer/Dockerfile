@@ -1,24 +1,26 @@
-# syntax=docker.io/docker/dockerfile:1.20
+# syntax=docker.io/docker/dockerfile:1.25
+# shellcheck shell=bash
 
 # see https://docs.aws.amazon.com/cli/latest/userguide/getting-started-version.html
 # see https://github.com/aws/aws-cli/tags
 # see https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#cliv2-linux-install
 # renovate: datasource=github-tags depName=aws/aws-cli
-ARG AWS_CLI_VERSION='2.31.22'
+ARG AWS_CLI_VERSION='2.35.21'
 
 # install aws cli session manager plugin.
+# NB this uses AWS Systems Manager (SSM).
 # see https://github.com/aws/session-manager-plugin/releases
 # see https://docs.aws.amazon.com/systems-manager/latest/userguide/install-plugin-debian-and-ubuntu.html
 # renovate: datasource=github-releases depName=aws/session-manager-plugin
-ARG AWS_SESSION_MANAGER_PLUGIN_VERSION='1.2.707.0'
+ARG AWS_SESSION_MANAGER_PLUGIN_VERSION='1.2.835.0'
 
 # see https://www.terraform.io/downloads.html
 # see https://github.com/hashicorp/terraform/releases
 # renovate: datasource=github-releases depName=hashicorp/terraform
-ARG TERRAFORM_VERSION='1.14.3'
+ARG TERRAFORM_VERSION='1.15.8'
 
-# see https://github.com/devcontainers/images/tree/main/src/base-debian/history
-FROM mcr.microsoft.com/devcontainers/base:2.1.3-trixie
+# see https://github.com/devcontainers/images/tree/main/src/base-debian/manifest.json
+FROM mcr.microsoft.com/devcontainers/base:2.1.11-trixie
 
 RUN <<'EOF'
 #!/usr/bin/bash
